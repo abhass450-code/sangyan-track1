@@ -1,26 +1,67 @@
-# 🛡️ Rakshak AI — Retail Investor Fraud & Scam Detector
+#  Rakshak AI
 
-**Track 1 Submission for Sangyan IIT BHU Hackathon**  
-*Protecting Retail Investors in Tier-2 & Tier-3 Cities from Financial Misinformation, Ponzi Schemes, & Fake Advisories.*
+### AI-Powered Financial Scam & Misinformation Detection for Retail Investors
+
+<p align="center">
+  <strong>Protect before you pay. Verify before you trust.</strong>
+</p>
+
+<p align="center">
+  Rakshak AI analyzes suspicious investment messages, claims and links,<br/>
+  identifies scam indicators, explains the risk, and guides users toward the right action.
+</p>
+
+<p align="center">
+
+![Next.js](https://img.shields.io/badge/Next.js-14%2F15-000000?style=for-the-badge&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![Gemini](https://img.shields.io/badge/Gemini_2.5_Flash-4285F4?style=for-the-badge&logo=google&logoColor=white)
+
+</p>
 
 ---
 
-## 🚀 Overview
+##  Sangyan IIT BHU — Track 1
 
-Retail investors in emerging markets frequently fall prey to fraudulent WhatsApp/Telegram advisories, pump-and-dump schemes, and phishing investment portals. **Rakshak AI** is an intelligent, human-centric security layer built to detect financial scams in real-time and provide immediate escalation pathways.
+**Financial Fraud, Scams, and Misinformation Detection for Retail Investors**
 
-Unlike standard LLM implementations that output arbitrary scores, **Rakshak AI** uses a hybrid architecture combining **Explainable AI (Gemini 2.5 Flash)** for feature extraction with a **Deterministic Rule Engine** for risk scoring.
+Rakshak AI is built to address a simple but critical problem:
 
----
+> **A scam is easiest to stop before the money is transferred.**
 
-## ✨ Key Features
+Retail investors increasingly encounter investment advice through WhatsApp, Telegram, social media and unofficial websites. Fraudsters exploit trust, urgency, fake authority, unrealistic returns and social pressure to convince users to transfer money or reveal sensitive information.
 
-- **Pre-Crime Threat Detection**: Real-time evaluation of suspicious text, WhatsApp forwards, Telegram stock tips, or URLs.
-- **Explainable Risk Scoring (0–100)**: Deterministic rule-based scoring based on SEBI financial safety guidelines (Guaranteed Returns, Urgency/FOMO, Unverified Channels, Unrealistic Yields).
-- **Red Flag Breakdown**: Clear, human-readable explanations highlighting why a message was flagged.
-- **Actionable Safety Advice**: Tailored guidance to protect users before making financial decisions.
-- **Post-Incident Protection (1930 Cyber Helpline Integration)**: Instant reporting pathway to the MHA National Cyber Crime Reporting Portal (`cybercrime.gov.in`) and 1930 helpline during the critical "Golden Hour".
+Rakshak AI acts as a **first-line financial safety layer** between suspicious content and the user's next action.
 
 ---
 
-## 🛠️ Tech Stack & Architecture
+#  The Problem
+
+Financial scams are becoming increasingly conversational.
+
+A fraudulent investment opportunity may arrive as:
+
+-  A Telegram investment message
+-  A suspicious trading website
+-  A "guaranteed returns" opportunity
+-  A pump-and-dump recommendation
+-  A fake SEBI/broker/institution impersonation
+-  An "act now" investment opportunity
+-  A request for OTP, PAN, KYC or login credentials
+-  A WhatsApp forward
+
+For many first-time or inexperienced investors, identifying these warning signs before acting can be difficult.
+
+### Rakshak AI changes the workflow from:
+
+```text
+See message
+    ↓
+Trust it
+    ↓
+Transfer money
+    ↓
+Realize it's a scam
+    ↓
+Try to recover the money
