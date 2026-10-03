@@ -1,111 +1,70 @@
 import { NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 
-interface GeminiSignals {
-  detectedType: string;
-  summary: string;
-  redFlags: string[];
-  signals: {
-    guaranteedReturns: boolean;
-    urgencyPressure: boolean;
-    suspiciousLink: boolean;
-    paymentRequest: boolean;
-    credentialRequest: boolean;
-    impersonation: boolean;
-    unrealisticProfit: boolean;
-  };
-  severity: "low" | "medium" | "high";
-}
+type Language = "en" | "hi";
 
-interface AnalysisResult {
-  riskScore: number;
-  verdict: "Safe" | "Suspicious" | "High Risk Scam";
+type GeminiSignals = {
+  guaranteedReturns: boolean;
+  urgencyPressure: boolean;
+  suspiciousLink: boolean;
+  paymentRequest: boolean;
+  credentialRequest: boolean;
+  impersonation: boolean;
+  unrealisticProfit: boolean;
   summary: string;
   redFlags: string[];
   advice: string[];
   detectedType: string;
-}
+};
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
+const WEIGHTS = {
+  guaranteedReturns: 25,
+  urgencyPressure: 15,
+  suspiciousLink: 15,
+  paymentRequest: 15,
+  credentialRequest: 25,
+  impersonation: 20,
+  unrealisticProfit: 20,
+} as const;
 
-function calculateRisk(signals: GeminiSignals["signals"]): number {
+function calculateRisk(signals: GeminiSignals) {
   let score = 0;
 
-  // Deterministic rule engine.
-  // Gemini identifies signals; the server calculates the score.
+  score += signals.guaranteedReturns
+    ? WEIGHTS.guaranteedReturns
+    : 0;
 
-  if (signals.guaranteedReturns) score += 25;
-  if (signals.urgencyPressure) score += 15;
-  if (signals.suspiciousLink) score += 15;
-  if (signals.paymentRequest) score += 15;
-  if (signals.credentialRequest) score += 25;
-  if (signals.impersonation) score += 20;
-  if (signals.unrealisticProfit) score += 20;
+  score += signals.urgencyPressure
+    ? WEIGHTS.urgencyPressure
+    : 0;
+
+  score += signals.suspiciousLink
+    ? WEIGHTS.suspiciousLink
+    : 0;
+
+  score += signals.paymentRequest
+    ? WEIGHTS.paymentRequest
+    : 0;
+
+  score += signals.credentialRequest
+    ? WEIGHTS.credentialRequest
+    : 0;
+
+  score += signals.impersonation
+    ? WEIGHTS.impersonation
+    : 0;
+
+  score += signals.unrealisticProfit
+    ? WEIGHTS.unrealisticProfit
+    : 0;
 
   return Math.min(score, 100);
 }
 
-function getVerdict(
-  score: number
-): "Safe" | "Suspicious" | "High Risk Scam" {
+function getVerdict(score: number) {
   if (score > 70) return "High Risk Scam";
   if (score > 40) return "Suspicious";
   return "Safe";
-}
-
-function getAdvice(
-  score: number,
-  signals: GeminiSignals["signals"]
-): string[] {
-  const advice: string[] = [];
-
-  if (score > 70) {
-    advice.push(
-      "Do not send money or share OTP, PIN, CVV, passwords, or banking details."
-    );
-
-    advice.push(
-      "Do not click suspicious links until the organisation is independently verified."
-    );
-
-    advice.push(
-      "If money has already been transferred, contact 1930 immediately."
-    );
-  } else if (score > 40) {
-    advice.push(
-      "Pause before investing, paying, or sharing personal information."
-    );
-
-    advice.push(
-      "Verify the sender, company, and investment through an official source."
-    );
-
-    advice.push(
-      "Do not rely only on forwarded messages, screenshots, or testimonials."
-    );
-  } else {
-    advice.push(
-      "No strong scam indicators were detected in the submitted content."
-    );
-
-    advice.push(
-      "Still verify financial claims through an official source before investing."
-    );
-
-    advice.push(
-      "Never share OTPs, PINs, passwords, or CVVs with anyone."
-    );
-  }
-
-  if (signals.credentialRequest) {
-    advice.push(
-      "Never provide OTPs, passwords, CVVs, or banking credentials through unsolicited links."
-    );
-  }
-
-  return [...new Set(advice)].slice(0, 4);
 }
 
 export async function POST(request: Request) {
@@ -113,9 +72,10 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     const input =
-      typeof body?.input === "string"
-        ? body.input.trim()
-        : "";
+      typeof body.input === "string" ? body.input.trim() : "";
+
+    const language: Language =
+      body.language === "hi" ? "hi" : "en";
 
     if (!input) {
       return NextResponse.json(
@@ -131,194 +91,187 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: "Please provide more content to analyze.",
+          error: "Please provide more content.",
         },
         { status: 400 }
       );
     }
 
-    if (input.length > 5000) {
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
       return NextResponse.json(
         {
           success: false,
-          error: "Input is too long. Maximum 5000 characters.",
-        },
-        { status: 400 }
-      );
-    }
-
-    if (!process.env.GEMINI_API_KEY) {
-      console.error("GEMINI_API_KEY is missing.");
-
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Gemini API key is not configured.",
+          error: "GEMINI_API_KEY is not configured.",
         },
         { status: 500 }
       );
     }
 
+    const ai = new GoogleGenAI({
+      apiKey,
+    });
+
+    const outputLanguage =
+      language === "hi"
+        ? "Hindi (Devanagari script)"
+        : "English";
+
     const prompt = `
-You are Rakshak AI, a financial scam detection assistant for Indian retail investors.
+You are Rakshak AI, a financial scam and investment fraud detection assistant for Indian retail investors.
 
-Analyze the following user-submitted content.
+Analyze the following user-provided content:
 
-The content may be:
-- WhatsApp forward
-- Telegram message
-- SMS
-- social media post
-- investment offer
-- financial advertisement
-- suspicious URL
-- phishing message
+--- CONTENT START ---
+${input}
+--- CONTENT END ---
+
+Your job is to identify scam-related signals.
 
 IMPORTANT:
-1. Do NOT decide the final numerical risk score.
-2. Extract observable scam signals only.
-3. Do not invent facts about companies, people, domains, or organisations.
-4. Treat URLs as suspicious when they show characteristics such as unusual domains, impersonation, login requests, or pressure tactics.
-5. Guaranteed returns, unrealistic profits, urgency, payment requests, credential requests, impersonation, and suspicious links are important signals.
-6. Return ONLY valid JSON matching the requested schema.
+1. Do NOT decide the final risk score yourself.
+2. Only extract the boolean signals.
+3. The server will calculate the final deterministic risk score.
+4. Do not accuse a person or organization of fraud as a proven fact.
+5. Treat the result as a safety warning.
+6. Explain detected signals clearly.
+7. Your natural-language output MUST be in ${outputLanguage}.
+8. Keep boolean field names exactly as provided.
+9. Return valid JSON matching the provided schema.
 
-USER CONTENT:
-"""
-${input}
-"""
+Detect these signals:
+
+- guaranteedReturns:
+  Claims guaranteed, fixed, risk-free, or assured returns.
+
+- urgencyPressure:
+  Creates urgency, limited slots, act now, today only, countdowns, or pressure to invest immediately.
+
+- suspiciousLink:
+  Contains a suspicious, unknown, shortened, lookalike, or investment-related URL.
+
+- paymentRequest:
+  Requests UPI, bank transfer, crypto, wallet, advance payment, or other direct payment.
+
+- credentialRequest:
+  Requests OTP, PIN, password, CVV, Aadhaar, PAN, bank credentials, login credentials, or similar sensitive information.
+
+- impersonation:
+  Pretends to represent a bank, broker, government authority, celebrity, company, regulator, or other trusted entity.
+
+- unrealisticProfit:
+  Promises unusually high or unrealistic profits/returns over a short period.
+
+For summary, redFlags, advice, and detectedType:
+- Use concise, user-friendly language.
+- Explain the actual evidence present in the submitted content.
+- Do not invent facts that are not present.
+- If there are no meaningful red flags, say so clearly.
 `;
 
     const response = await ai.models.generateContent({
       model: "gemini-3.5-flash-lite",
       contents: prompt,
       config: {
+        temperature: 0.1,
         responseMimeType: "application/json",
         responseSchema: {
-          type: "object",
+          type: Type.OBJECT,
           properties: {
-            detectedType: {
-              type: "string",
+            guaranteedReturns: {
+              type: Type.BOOLEAN,
+            },
+            urgencyPressure: {
+              type: Type.BOOLEAN,
+            },
+            suspiciousLink: {
+              type: Type.BOOLEAN,
+            },
+            paymentRequest: {
+              type: Type.BOOLEAN,
+            },
+            credentialRequest: {
+              type: Type.BOOLEAN,
+            },
+            impersonation: {
+              type: Type.BOOLEAN,
+            },
+            unrealisticProfit: {
+              type: Type.BOOLEAN,
             },
             summary: {
-              type: "string",
+              type: Type.STRING,
             },
             redFlags: {
-              type: "array",
+              type: Type.ARRAY,
               items: {
-                type: "string",
+                type: Type.STRING,
               },
             },
-            signals: {
-              type: "object",
-              properties: {
-                guaranteedReturns: {
-                  type: "boolean",
-                },
-                urgencyPressure: {
-                  type: "boolean",
-                },
-                suspiciousLink: {
-                  type: "boolean",
-                },
-                paymentRequest: {
-                  type: "boolean",
-                },
-                credentialRequest: {
-                  type: "boolean",
-                },
-                impersonation: {
-                  type: "boolean",
-                },
-                unrealisticProfit: {
-                  type: "boolean",
-                },
+            advice: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.STRING,
               },
-              required: [
-                "guaranteedReturns",
-                "urgencyPressure",
-                "suspiciousLink",
-                "paymentRequest",
-                "credentialRequest",
-                "impersonation",
-                "unrealisticProfit",
-              ],
             },
-            severity: {
-              type: "string",
-              enum: ["low", "medium", "high"],
+            detectedType: {
+              type: Type.STRING,
             },
           },
           required: [
-            "detectedType",
+            "guaranteedReturns",
+            "urgencyPressure",
+            "suspiciousLink",
+            "paymentRequest",
+            "credentialRequest",
+            "impersonation",
+            "unrealisticProfit",
             "summary",
             "redFlags",
-            "signals",
-            "severity",
+            "advice",
+            "detectedType",
           ],
         },
       },
     });
 
-    if (!response.text) {
+    const rawText = response.text;
+
+    if (!rawText) {
       throw new Error("Gemini returned an empty response.");
     }
 
-    let signals: GeminiSignals;
+    const signals = JSON.parse(rawText) as GeminiSignals;
 
-    try {
-      signals = JSON.parse(response.text);
-    } catch {
-      console.error("Invalid Gemini JSON:", response.text);
-
-      return NextResponse.json(
-        {
-          success: false,
-          error: "AI returned an invalid analysis response.",
-        },
-        { status: 502 }
-      );
-    }
-
-    const riskScore = calculateRisk(signals.signals);
-
+    const riskScore = calculateRisk(signals);
     const verdict = getVerdict(riskScore);
-
-    const result: AnalysisResult = {
-      riskScore,
-      verdict,
-      summary:
-        signals.summary ||
-        "Rakshak analyzed the submitted content for common scam indicators.",
-      redFlags:
-        signals.redFlags.length > 0
-          ? signals.redFlags.slice(0, 6)
-          : ["No major scam indicators were detected."],
-      advice: getAdvice(riskScore, signals.signals),
-      detectedType:
-        signals.detectedType || "Financial message",
-    };
 
     return NextResponse.json({
       success: true,
-      result,
+      result: {
+        riskScore,
+        verdict,
+        summary: signals.summary,
+        redFlags: signals.redFlags,
+        advice: signals.advice,
+        detectedType: signals.detectedType,
+      },
     });
-  } catch (error: any) {
-  console.error("Rakshak analysis error:", error);
+  } catch (error) {
+    console.error("Rakshak analyze error:", error);
 
-  const status =
-    error?.status === 503 || error?.status === 429
-      ? 503
-      : 500;
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Unknown analysis error";
 
-  return NextResponse.json(
-    {
-      success: false,
-      error:
-        status === 503
-          ? "Rakshak AI is temporarily busy. Please try again in a few seconds."
-          : "Unable to analyze this content right now.",
-    },
-    { status }
-  );
-}
+    return NextResponse.json(
+      {
+        success: false,
+        error: message,
+      },
+      { status: 500 }
+    );
+  }
 }
