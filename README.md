@@ -1,36 +1,26 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🛡️ Rakshak AI — Retail Investor Fraud & Scam Detector
 
-## Getting Started
+**Track 1 Submission for Sangyan IIT BHU Hackathon**  
+*Protecting Retail Investors in Tier-2 & Tier-3 Cities from Financial Misinformation, Ponzi Schemes, & Fake Advisories.*
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🚀 Overview
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Retail investors in emerging markets frequently fall prey to fraudulent WhatsApp/Telegram advisories, pump-and-dump schemes, and phishing investment portals. **Rakshak AI** is an intelligent, human-centric security layer built to detect financial scams in real-time and provide immediate escalation pathways.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Unlike standard LLM implementations that output arbitrary scores, **Rakshak AI** uses a hybrid architecture combining **Explainable AI (Gemini 2.5 Flash)** for feature extraction with a **Deterministic Rule Engine** for risk scoring.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## ✨ Key Features
 
-To learn more about Next.js, take a look at the following resources:
+- **Pre-Crime Threat Detection**: Real-time evaluation of suspicious text, WhatsApp forwards, Telegram stock tips, or URLs.
+- **Explainable Risk Scoring (0–100)**: Deterministic rule-based scoring based on SEBI financial safety guidelines (Guaranteed Returns, Urgency/FOMO, Unverified Channels, Unrealistic Yields).
+- **Red Flag Breakdown**: Clear, human-readable explanations highlighting why a message was flagged.
+- **Actionable Safety Advice**: Tailored guidance to protect users before making financial decisions.
+- **Post-Incident Protection (1930 Cyber Helpline Integration)**: Instant reporting pathway to the MHA National Cyber Crime Reporting Portal (`cybercrime.gov.in`) and 1930 helpline during the critical "Golden Hour".
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🛠️ Tech Stack & Architecture
