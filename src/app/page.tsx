@@ -210,71 +210,100 @@ export default function Home() {
   }
 
   function startVoice() {
-    const SpeechRecognition =
-      (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
+  const SpeechRecognition =
+    (window as any).SpeechRecognition ||
+    (window as any).webkitSpeechRecognition;
 
-    if (!SpeechRecognition) {
-      setError(t.micUnsupported);
-      return;
-    }
-
-    if (isRecording) {
-      try {
-        recognitionRef.current?.stop();
-      } catch {}
-      setIsRecording(false);
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-
-    recognition.lang = language === "hi" ? "hi-IN" : "en-IN";
-    recognition.interimResults = true;
-    recognition.continuous = true;
-
-    recognition.onstart = () => {
-      setIsRecording(true);
-      setError("");
-    };
-
-    recognition.onresult = (event: any) => {
-      let finalText = "";
-
-      for (
-        let i = event.resultIndex;
-        i < event.results.length;
-        i += 1
-      ) {
-        finalText += event.results[i][0].transcript + " ";
-      }
-
-      if (finalText.trim()) {
-        setInput((previous) =>
-          `${previous} ${finalText}`.trim()
-        );
-      }
-    };
-
-    recognition.onerror = () => {
-      setIsRecording(false);
-      setError(t.micError);
-    };
-
-    recognition.onend = () => {
-      setIsRecording(false);
-    };
-
-    recognitionRef.current = recognition;
-
-    try {
-      recognition.start();
-    } catch {
-      setIsRecording(false);
-      setError(t.micError);
-    }
+  if (!SpeechRecognition) {
+    setError(t.micUnsupported);
+    return;
   }
 
+  if (isRecording) {
+    try {
+      recognitionRef.current?.stop();
+    } catch {}
+
+    setIsRecording(false);
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+
+  recognition.lang =
+    language === "hi" ? "hi-IN" : "en-IN";
+
+  // IMPORTANT:
+  // Only final results are accepted.
+  recognition.interimResults = false;
+
+  // Keep listening until user presses stop.
+  recognition.continuous = true;
+
+  recognition.onstart = () => {
+    setIsRecording(true);
+    setError("");
+  };
+
+  recognition.onresult = (event: any) => {
+    let finalTranscript = "";
+
+    for (
+      let i = event.resultIndex;
+      i < event.results.length;
+      i += 1
+    ) {
+      const result = event.results[i];
+
+      // Ignore interim/non-final results.
+      if (!result.isFinal) continue;
+
+      const spokenText =
+        result[0]?.transcript?.trim();
+
+      if (spokenText) {
+        finalTranscript += `${spokenText} `;
+      }
+    }
+
+    const cleanTranscript =
+      finalTranscript.trim();
+
+    if (cleanTranscript) {
+      setInput((previous) => {
+        if (!previous.trim()) {
+          return cleanTranscript;
+        }
+
+        return `${previous.trim()} ${cleanTranscript}`;
+      });
+    }
+  };
+
+  recognition.onerror = (event: any) => {
+    console.error("Speech recognition error:", event);
+
+    setIsRecording(false);
+
+    if (event?.error !== "no-speech") {
+      setError(t.micError);
+    }
+  };
+
+  recognition.onend = () => {
+    setIsRecording(false);
+  };
+
+  recognitionRef.current = recognition;
+
+  try {
+    recognition.start();
+  } catch (err) {
+    console.error("Could not start recognition:", err);
+    setIsRecording(false);
+    setError(t.micError);
+  }
+}
   async function analyze(event?: FormEvent) {
     event?.preventDefault();
 
